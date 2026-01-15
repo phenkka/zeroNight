@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wordle vs AI</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <header class="header">
+      <div class="title">Wordle vs AI</div>
+      <div class="subtitle">12 levels, different word lengths</div>
+      <div class="header-actions">
+        
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="game-window ai-window" aria-label="AI progress">
+        <div class="window-titlebar" aria-hidden="true">
+          <div class="window-controls"></div>
+          <div class="window-title">ai.progress</div>
+          <div class="window-spacer"></div>
+        </div>
+
+        <div class="window-content ai-content">
+          <div class="ai-track-title">AI Progress</div>
+          <section class="level-track" id="botLevelTrack" aria-label="AI Levels"></section>
+        </div>
+      </section>
+
+      <section class="game-window" aria-label="Game Window">
+        <div class="window-titlebar" aria-hidden="true">
+          <div class="window-controls">
+            <button id="rulesBtn" class="window-rules-btn" type="button">RULES</button>
+          </div>
+          <div class="window-title">terminal.wordle</div>
+          <div class="window-spacer"></div>
+        </div>
+
+        <div class="window-content">
+          <section class="board" id="board"></section>
+          <section class="keyboard" id="keyboard"></section>
+
+          <div class="notice-overlay" id="noticeOverlay" aria-hidden="true">
+            <div class="notice-window" role="status" aria-live="polite">
+              <div class="notice-titlebar" aria-hidden="true">
+                <div class="notice-title">terminal.notice</div>
+              </div>
+              <div class="notice-content">
+                <section class="toast" id="toast"></section>
+                <section class="cooldown" id="cooldown"></section>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <div class="level-track-wrap" aria-hidden="false">
+      <section class="level-track" id="levelTrack" aria-label="Levels"></section>
+    </div>
+
+    <div class="modal-backdrop" id="rulesModal" role="dialog" aria-modal="true" aria-label="Rules">
+      <div class="modal terminal-modal">
+        <div class="terminal-titlebar" aria-hidden="true">
+          <div class="terminal-controls">
+            <button class="terminal-dot-btn" id="rulesCloseBtn" type="button" aria-label="Close">
+              <span class="terminal-dot red"></span>
+            </button>
+            <button class="terminal-dot-btn" id="rulesMinBtn" type="button" aria-label="Minimize">
+              <span class="terminal-dot yellow"></span>
+            </button>
+            <span class="terminal-dot green" aria-hidden="true"></span>
+          </div>
+          <div class="terminal-title">terminal.rules</div>
+          <div class="window-spacer"></div>
+        </div>
+        <div class="modal-body">
+          <p>
+            You are playing 12 Wordle-style levels. Each level has a different word length.
+            Type a word and press ENTER.
+          </p>
+          <p>
+            Cooldown: you can submit only one guess per 90 seconds.
+          </p>
+          <p>
+            At the same time, an AI is "solving" the levels too and racing you to the final reward
+            (a seed phrase in the story).
+          </p>
+          <p>
+            When the AI finishes all 12 levels first,
+            everyone loses.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="resultModal" role="dialog" aria-modal="true" aria-label="Result">
+      <div class="modal terminal-modal modal-small">
+        <div class="terminal-titlebar" aria-hidden="true">
+          <div class="terminal-controls">
+            <button class="terminal-dot-btn" id="resultCloseBtn" type="button" aria-label="Close">
+              <span class="terminal-dot red"></span>
+            </button>
+            <button class="terminal-dot-btn" id="resultMinBtn" type="button" aria-label="Minimize">
+              <span class="terminal-dot yellow"></span>
+            </button>
+            <span class="terminal-dot green" aria-hidden="true"></span>
+          </div>
+          <div class="terminal-title">terminal.result</div>
+          <div class="window-spacer"></div>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-title" id="resultTitle"></div>
+          <div id="resultBody"></div>
+        </div>
+
+        <div class="modal-actions">
+          <button class="btn secondary" id="resultPrimaryBtn" type="button"></button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
