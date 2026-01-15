@@ -5,9 +5,12 @@ services:
       - app
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - ./deploy/nginx/zeronight.docker.conf:/etc/nginx/conf.d/default.conf:ro
       - ./static:/app/static:ro
+      - ./deploy/certbot/www:/var/www/certbot:ro
+      - ./deploy/certbot/conf:/etc/letsencrypt:ro
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -49,6 +52,12 @@ services:
     restart: unless-stopped
     volumes:
       - redis-data:/data
+
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./deploy/certbot/conf:/etc/letsencrypt
+      - ./deploy/certbot/www:/var/www/certbot
 
 volumes:
   redis-data:
