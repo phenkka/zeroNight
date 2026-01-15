@@ -99,7 +99,7 @@ body {
   padding: 16px;
   display: grid;
   gap: 16px;
-  padding-bottom: 64px;
+  padding-bottom: 86px;
 }
 
 .game-window {
@@ -540,7 +540,7 @@ select {
   padding: 10px 12px;
   background: transparent;
   pointer-events: auto;
-  z-index: 10;
+  z-index: 40;
 }
 
 .level-track {
