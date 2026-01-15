@@ -4,10 +4,10 @@
   --text: #111827;
   --muted: rgba(17, 24, 39, 0.62);
 
-  --tile-size: 50px;
-  --tile-gap: 6px;
-  --key-height: 46px;
-  --key-min-width: 40px;
+  --tile-size: 48px;
+  --tile-gap: 5px;
+  --key-height: 44px;
+  --key-min-width: 38px;
 
   --tile: #ffffff;
   --tile-border: #d3d6da;
