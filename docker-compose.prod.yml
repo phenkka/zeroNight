@@ -22,6 +22,7 @@ services:
     build: .
     environment:
       - REDIS_URL=redis://redis:6379/0
+      - BOT_DURATION_SECONDS=${BOT_DURATION_SECONDS:-3600}
     depends_on:
       - redis
     command:

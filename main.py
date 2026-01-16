@@ -30,7 +30,7 @@ WORDS = [
 
 MAX_ATTEMPTS = 6
 
-BOT_DURATION_SECONDS = 60 * 60
+BOT_DURATION_SECONDS = int(os.getenv("BOT_DURATION_SECONDS", str(60 * 60)))
 
 COOLDOWN_SECONDS = 30
 STATE_TTL_SECONDS = 12 * 60 * 60
@@ -100,7 +100,22 @@ def _bot_start_epoch_seconds(r: redis.Redis, now: int) -> int:
 def _bot_solved_count(r: redis.Redis, total_levels: int, now: int) -> int:
     start = _bot_start_epoch_seconds(r, now)
     elapsed = max(0, now - start)
-    frac = min(1.0, elapsed / float(BOT_DURATION_SECONDS))
+    duration = max(1, int(BOT_DURATION_SECONDS))
+    frac = min(1.0, elapsed / float(duration))
+
+    progress_key = _rk("bot", "progress")
+    stored_raw = r.get(progress_key)
+    stored = 0.0
+    if stored_raw is not None:
+        try:
+            stored = float(stored_raw)
+        except ValueError:
+            stored = 0.0
+
+    frac = max(stored, frac)
+    if frac > stored:
+        r.set(progress_key, str(frac))
+
     return min(total_levels, int(frac * total_levels))
 
 
