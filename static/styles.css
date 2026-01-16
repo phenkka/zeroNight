@@ -127,6 +127,7 @@ body {
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.82);
   border-bottom: 1px solid rgba(17, 24, 39, 0.10);
+  position: relative;
 }
 
 .window-controls {
@@ -282,7 +283,11 @@ body {
   color: rgba(17, 24, 39, 0.70);
   letter-spacing: 0.2px;
   user-select: none;
-  justify-self: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  white-space: nowrap;
 }
 
 .window-spacer {

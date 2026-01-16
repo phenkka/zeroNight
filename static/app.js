@@ -1,4 +1,4 @@
-const GUESS_COOLDOWN_MS = 90 * 1000;
+const GUESS_COOLDOWN_MS = 60 * 1000;
 
 let toastHideTimer = null;
 let toastHideToken = 0;
@@ -55,7 +55,7 @@ function stopMusic() {
   }
 }
 
-async function ensureMusicStarted() {
+function ensureMusicStarted() {
   if (!musicEnabled) return;
   if (musicNodes) return;
 
@@ -64,13 +64,13 @@ async function ensureMusicStarted() {
   }
 
   if (audioCtx.state !== "running") {
-    await audioCtx.resume();
+    audioCtx.resume().catch(() => {});
   }
 
   const ctx = audioCtx;
 
   const master = ctx.createGain();
-  master.gain.value = 0.012;
+  master.gain.value = 0.02;
 
   const filter = ctx.createBiquadFilter();
   filter.type = "lowpass";
@@ -206,21 +206,25 @@ function initMusic() {
     if (musicStartArmed) return;
     musicStartArmed = true;
 
-    const startOnce = async () => {
+    const startOnce = () => {
       window.removeEventListener("pointerdown", startOnce);
+      window.removeEventListener("touchstart", startOnce);
+      window.removeEventListener("click", startOnce);
       window.removeEventListener("keydown", startOnce);
       try {
-        await ensureMusicStarted();
+        ensureMusicStarted();
       } catch {
         // ignore
       }
     };
 
     window.addEventListener("pointerdown", startOnce, { once: true });
+    window.addEventListener("touchstart", startOnce, { once: true, passive: true });
+    window.addEventListener("click", startOnce, { once: true });
     window.addEventListener("keydown", startOnce, { once: true });
   };
 
-  btn.addEventListener("click", async () => {
+  btn.addEventListener("click", () => {
     musicEnabled = !musicEnabled;
     localStorage.setItem(MUSIC_STORAGE_KEY, musicEnabled ? "1" : "0");
     setMusicBtnState(btn);
@@ -231,10 +235,19 @@ function initMusic() {
     }
 
     try {
-      await ensureMusicStarted();
+      ensureMusicStarted();
     } catch {
-      armStartOnFirstGesture();
+      // ignore
     }
+
+    setTimeout(() => {
+      if (!musicEnabled) return;
+      if (!audioCtx) return;
+      if (audioCtx.state !== "running") {
+        showToast("Tap once to enable audio (and disable iPhone silent mode)", { timeoutMs: 4500 });
+        armStartOnFirstGesture();
+      }
+    }, 500);
   });
 
   armStartOnFirstGesture();
