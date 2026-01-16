@@ -10,6 +10,11 @@ let audioCtx = null;
 let musicNodes = null;
 let musicStartArmed = false;
 let bgAudio = null;
+let sfxKeyAudio = null;
+let sfxWinAudio = null;
+
+const BG_MUSIC_VOLUME = 0.3;
+const SFX_VOLUME = 0.3;
 
 function midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -27,6 +32,14 @@ function stopMusic() {
     try {
       bgAudio.pause();
       bgAudio.currentTime = 0;
+    } catch {}
+  }
+
+  for (const a of [sfxKeyAudio, sfxWinAudio]) {
+    if (!a) continue;
+    try {
+      a.pause();
+      a.currentTime = 0;
     } catch {}
   }
 
@@ -68,7 +81,7 @@ function ensureMusicStarted() {
 
   if (bgAudio) {
     try {
-      bgAudio.volume = 0.35;
+      bgAudio.volume = BG_MUSIC_VOLUME;
       const p = bgAudio.play();
       if (p && typeof p.catch === "function") {
         p.catch(() => {
@@ -225,9 +238,19 @@ function initMusic() {
   bgAudio = document.getElementById("bgAudio");
   if (bgAudio) {
     bgAudio.loop = true;
+    bgAudio.volume = BG_MUSIC_VOLUME;
     bgAudio.addEventListener("error", () => {
       showToast("Music file missing: add /static/relax.mp3", { timeoutMs: 4500 });
     });
+  }
+
+  sfxKeyAudio = new Audio("/static/sfx_key.mp3");
+  sfxWinAudio = new Audio("/static/sfx_win.mp3");
+  for (const a of [sfxKeyAudio, sfxWinAudio]) {
+    try {
+      a.preload = "auto";
+      a.volume = SFX_VOLUME;
+    } catch {}
   }
 
   musicEnabled = localStorage.getItem(MUSIC_STORAGE_KEY) === "1";
@@ -804,6 +827,14 @@ async function submitGuess() {
     updateKeyboardColors();
 
     if (data.is_correct) {
+      if (musicEnabled && sfxWinAudio) {
+        try {
+          sfxWinAudio.currentTime = 0;
+          const p = sfxWinAudio.play();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+        } catch {}
+      }
+
       playerSolved.add(currentLevel);
       renderLevelTrack();
       updateGameLockFromBot();
@@ -854,6 +885,13 @@ function onKey(key) {
   }
 
   if (key === "BACK") {
+    if (musicEnabled && sfxKeyAudio && currentGuess.length > 0) {
+      try {
+        sfxKeyAudio.currentTime = 0;
+        const p = sfxKeyAudio.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch {}
+    }
     currentGuess = currentGuess.slice(0, -1);
     paintCurrentGuess();
     return;
@@ -867,6 +905,14 @@ function onKey(key) {
 
     const len = lengthForLevel(currentLevel);
     if (currentGuess.length >= len) return;
+
+    if (musicEnabled && sfxKeyAudio) {
+      try {
+        sfxKeyAudio.currentTime = 0;
+        const p = sfxKeyAudio.play();
+        if (p && typeof p.catch === "function") p.catch(() => {});
+      } catch {}
+    }
 
     currentGuess += key;
     paintCurrentGuess();
