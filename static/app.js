@@ -1,4 +1,4 @@
-const GUESS_COOLDOWN_MS = 30 * 1000;
+const GUESS_COOLDOWN_MS = 3 * 1000;
 
 let toastHideTimer = null;
 let toastHideToken = 0;
@@ -808,7 +808,7 @@ async function submitGuess() {
       }
 
       if (res.status === 429 && data?.detail?.error === "cooldown") {
-        const retryAfterSec = Number(data.detail.retry_after) || 30;
+        const retryAfterSec = Number(data.detail.retry_after) || 3;
         startGuessCooldown(retryAfterSec * 1000);
         showToast(`Cooldown: ${retryAfterSec}s`);
       } else {
