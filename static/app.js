@@ -4,6 +4,242 @@ let toastHideTimer = null;
 let toastHideToken = 0;
 let lastToastText = "";
 
+const MUSIC_STORAGE_KEY = "zeronight_music_enabled";
+let musicEnabled = false;
+let audioCtx = null;
+let musicNodes = null;
+let musicStartArmed = false;
+
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function setMusicBtnState(btn) {
+  if (!btn) return;
+  btn.setAttribute("aria-pressed", musicEnabled ? "true" : "false");
+}
+
+function stopMusic() {
+  musicStartArmed = false;
+
+  if (musicNodes) {
+    if (musicNodes.timer) {
+      clearInterval(musicNodes.timer);
+    }
+
+    if (musicNodes.active && musicNodes.active.size) {
+      for (const n of musicNodes.active) {
+        try {
+          n.stop();
+        } catch {}
+      }
+      musicNodes.active.clear();
+    }
+
+    try {
+      musicNodes.osc1.stop();
+    } catch {}
+    try {
+      musicNodes.osc2.stop();
+    } catch {}
+    try {
+      musicNodes.lfo.stop();
+    } catch {}
+    musicNodes = null;
+  }
+
+  if (audioCtx) {
+    const ctx = audioCtx;
+    audioCtx = null;
+    ctx.close().catch(() => {});
+  }
+}
+
+async function ensureMusicStarted() {
+  if (!musicEnabled) return;
+  if (musicNodes) return;
+
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  if (audioCtx.state !== "running") {
+    await audioCtx.resume();
+  }
+
+  const ctx = audioCtx;
+
+  const master = ctx.createGain();
+  master.gain.value = 0.012;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 1800;
+  filter.Q.value = 0.6;
+
+  const delay = ctx.createDelay(1.5);
+  delay.delayTime.value = 0.32;
+  const feedback = ctx.createGain();
+  feedback.gain.value = 0.22;
+  const wet = ctx.createGain();
+  wet.gain.value = 0.42;
+  const dry = ctx.createGain();
+  dry.gain.value = 0.9;
+
+  filter.connect(dry);
+  dry.connect(master);
+
+  filter.connect(delay);
+  delay.connect(feedback);
+  feedback.connect(delay);
+  delay.connect(wet);
+  wet.connect(master);
+
+  master.connect(ctx.destination);
+
+  const lfo = ctx.createOscillator();
+  lfo.type = "sine";
+  lfo.frequency.value = 0.05;
+  const lfoGain = ctx.createGain();
+  lfoGain.gain.value = 120;
+  lfo.connect(lfoGain);
+  lfoGain.connect(filter.frequency);
+  lfo.start();
+
+  const active = new Set();
+  const makeVoice = ({ freq, when, duration, type, gainValue, attack, release }) => {
+    const osc = ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, when);
+
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, when);
+    g.gain.exponentialRampToValueAtTime(gainValue, when + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, when + duration - release);
+
+    osc.connect(g);
+    g.connect(filter);
+
+    osc.start(when);
+    osc.stop(when + duration);
+    active.add(osc);
+    osc.onended = () => active.delete(osc);
+  };
+
+  const progression = [
+    [60, 64, 67],
+    [57, 60, 64],
+    [53, 57, 60],
+    [55, 59, 62],
+  ];
+  let step = 0;
+
+  const tick = () => {
+    const now = ctx.currentTime + 0.02;
+    const chord = progression[step % progression.length];
+    step += 1;
+
+    for (const m of chord) {
+      makeVoice({
+        freq: midiToFreq(m - 12),
+        when: now,
+        duration: 3.9,
+        type: "triangle",
+        gainValue: 0.06,
+        attack: 0.12,
+        release: 0.5,
+      });
+      makeVoice({
+        freq: midiToFreq(m),
+        when: now,
+        duration: 3.9,
+        type: "sine",
+        gainValue: 0.028,
+        attack: 0.18,
+        release: 0.55,
+      });
+    }
+
+    const arpOrder = [0, 1, 2, 1];
+    for (let i = 0; i < 8; i++) {
+      const note = chord[arpOrder[i % arpOrder.length]] + 12;
+      makeVoice({
+        freq: midiToFreq(note),
+        when: now + i * 0.45,
+        duration: 0.9,
+        type: "sine",
+        gainValue: 0.02,
+        attack: 0.01,
+        release: 0.22,
+      });
+    }
+  };
+
+  tick();
+  const timer = setInterval(tick, 4000);
+
+  musicNodes = {
+    master,
+    filter,
+    delay,
+    feedback,
+    wet,
+    dry,
+    lfo,
+    lfoGain,
+    active,
+    timer,
+    osc1: { stop() {} },
+    osc2: { stop() {} },
+  };
+}
+
+function initMusic() {
+  const btn = document.getElementById("musicBtn");
+  if (!btn) return;
+
+  musicEnabled = localStorage.getItem(MUSIC_STORAGE_KEY) === "1";
+  setMusicBtnState(btn);
+
+  const armStartOnFirstGesture = () => {
+    if (!musicEnabled) return;
+    if (musicStartArmed) return;
+    musicStartArmed = true;
+
+    const startOnce = async () => {
+      window.removeEventListener("pointerdown", startOnce);
+      window.removeEventListener("keydown", startOnce);
+      try {
+        await ensureMusicStarted();
+      } catch {
+        // ignore
+      }
+    };
+
+    window.addEventListener("pointerdown", startOnce, { once: true });
+    window.addEventListener("keydown", startOnce, { once: true });
+  };
+
+  btn.addEventListener("click", async () => {
+    musicEnabled = !musicEnabled;
+    localStorage.setItem(MUSIC_STORAGE_KEY, musicEnabled ? "1" : "0");
+    setMusicBtnState(btn);
+
+    if (!musicEnabled) {
+      stopMusic();
+      return;
+    }
+
+    try {
+      await ensureMusicStarted();
+    } catch {
+      armStartOnFirstGesture();
+    }
+  });
+
+  armStartOnFirstGesture();
+}
+
 async function fetchState() {
   const res = await fetch("/api/state");
   if (!res.ok) throw new Error("Failed to load state");
@@ -729,6 +965,7 @@ function showResultModal({ type, title, body }) {
 }
 
 async function main() {
+  initMusic();
   createKeyboard();
   attachPhysicalKeyboard();
   attachRulesModal();
