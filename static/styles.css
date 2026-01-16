@@ -531,6 +531,42 @@ select {
   min-width: 78px;
 }
 
+@media (max-width: 480px) {
+  .keyboard {
+    width: 100%;
+    gap: 6px;
+  }
+
+  .kb-row {
+    width: 100%;
+    gap: 4px;
+    padding: 0 6px;
+    justify-content: center;
+  }
+
+  .key {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 42px;
+    padding: 0 6px;
+    font-size: 12px;
+    border-radius: 9px;
+  }
+
+  .key.wide {
+    flex: 1.6 1 0;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .key {
+    height: 40px;
+    font-size: 11px;
+    padding: 0 5px;
+  }
+}
+
 .key.absent {
   background: var(--absent);
   border-color: var(--absent);

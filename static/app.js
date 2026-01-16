@@ -9,6 +9,7 @@ let musicEnabled = false;
 let audioCtx = null;
 let musicNodes = null;
 let musicStartArmed = false;
+let bgAudio = null;
 
 function midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
@@ -21,6 +22,13 @@ function setMusicBtnState(btn) {
 
 function stopMusic() {
   musicStartArmed = false;
+
+  if (bgAudio) {
+    try {
+      bgAudio.pause();
+      bgAudio.currentTime = 0;
+    } catch {}
+  }
 
   if (musicNodes) {
     if (musicNodes.timer) {
@@ -57,6 +65,22 @@ function stopMusic() {
 
 function ensureMusicStarted() {
   if (!musicEnabled) return;
+
+  if (bgAudio) {
+    try {
+      bgAudio.volume = 0.35;
+      const p = bgAudio.play();
+      if (p && typeof p.catch === "function") {
+        p.catch(() => {
+          showToast("Tap again to enable audio", { timeoutMs: 2600 });
+        });
+      }
+      return;
+    } catch {
+      // fall back to WebAudio
+    }
+  }
+
   if (musicNodes) return;
 
   if (!audioCtx) {
@@ -198,6 +222,13 @@ function initMusic() {
   const btn = document.getElementById("musicBtn");
   if (!btn) return;
 
+  bgAudio = document.getElementById("bgAudio");
+  if (bgAudio) {
+    bgAudio.addEventListener("error", () => {
+      showToast("Music file missing: put relax.mp3 in /static", { timeoutMs: 4500 });
+    });
+  }
+
   musicEnabled = localStorage.getItem(MUSIC_STORAGE_KEY) === "1";
   setMusicBtnState(btn);
 
@@ -242,8 +273,13 @@ function initMusic() {
 
     setTimeout(() => {
       if (!musicEnabled) return;
-      if (!audioCtx) return;
-      if (audioCtx.state !== "running") {
+      if (bgAudio && bgAudio.paused) {
+        showToast("Tap once to enable audio (and disable iPhone silent mode)", { timeoutMs: 4500 });
+        armStartOnFirstGesture();
+        return;
+      }
+
+      if (audioCtx && audioCtx.state !== "running") {
         showToast("Tap once to enable audio (and disable iPhone silent mode)", { timeoutMs: 4500 });
         armStartOnFirstGesture();
       }
