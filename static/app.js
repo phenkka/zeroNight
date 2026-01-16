@@ -1,4 +1,4 @@
-const GUESS_COOLDOWN_MS = 60 * 1000;
+const GUESS_COOLDOWN_MS = 30 * 1000;
 
 let toastHideTimer = null;
 let toastHideToken = 0;
@@ -224,8 +224,9 @@ function initMusic() {
 
   bgAudio = document.getElementById("bgAudio");
   if (bgAudio) {
+    bgAudio.loop = true;
     bgAudio.addEventListener("error", () => {
-      showToast("Music file missing: put relax.mp3 in /static", { timeoutMs: 4500 });
+      showToast("Music file missing: add /static/relax.mp3", { timeoutMs: 4500 });
     });
   }
 
@@ -784,7 +785,7 @@ async function submitGuess() {
       }
 
       if (res.status === 429 && data?.detail?.error === "cooldown") {
-        const retryAfterSec = Number(data.detail.retry_after) || 60;
+        const retryAfterSec = Number(data.detail.retry_after) || 30;
         startGuessCooldown(retryAfterSec * 1000);
         showToast(`Cooldown: ${retryAfterSec}s`);
       } else {
